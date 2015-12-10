@@ -1,0 +1,20 @@
+{
+    "name": "wucdbm/epay",
+    "type": "library",
+    "description": "ePay library for epay.bg",
+    "keywords": ["wucdbm", "epay", "library"],
+    "authors": [
+        {
+            "name": "Martin Kirilov",
+            "email": "wucdbm@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "~5.5"
+    },
+    "autoload": {
+        "psr-4": { "Wucdbm\\Component\\Epay\\": "" }
+    },
+    "license": "GPL-2.0"
+}
