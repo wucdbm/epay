@@ -3,7 +3,6 @@
 namespace Wucdbm\Component\Epay\Client;
 
 use Wucdbm\Component\Epay\Exception\ChecksumMismatchException;
-use Wucdbm\Component\Epay\Exception\EasyPayRequestErrorException;
 use Wucdbm\Component\Epay\Exception\InvoiceNotFoundException;
 use Wucdbm\Component\Epay\Exception\NoDataException;
 use Wucdbm\Component\Epay\Payment\PaymentParams;
