@@ -1,7 +1,7 @@
 {
     "name": "wucdbm/epay",
     "type": "library",
-    "description": "ePay library for epay.bg",
+    "description": "Library for epay.bg",
     "keywords": ["wucdbm", "epay", "library"],
     "authors": [
         {
@@ -11,7 +11,9 @@
         }
     ],
     "require": {
-        "php": "~5.5"
+        "php": "~5.5",
+        "guzzlehttp/guzzle": "~6.0",
+        "symfony/options-resolver": "~2.8"
     },
     "autoload": {
         "psr-4": { "Wucdbm\\Component\\Epay\\": "" }
