@@ -2,17 +2,20 @@
 
 namespace Wucdbm\Component\Epay\Response;
 
-class ReceiveResponse {
+/**
+ * Response for all payments
+ */
+class ReceiveResponse implements ReceiveResponseInterface {
 
     /**
      * @var PaymentResponse[]
      */
-    protected $paymentResponces;
+    protected $paymentResponses;
 
     public function toString() {
         $responses = [];
         /** @var PaymentResponse $response */
-        foreach ($this->paymentResponces as $response) {
+        foreach ($this->paymentResponses as $response) {
             $responses[] = $response->toString();
         }
 
@@ -21,24 +24,24 @@ class ReceiveResponse {
 
     /**
      * ReceiveResponse constructor.
-     * @param PaymentResponse[] $paymentResponces
+     * @param PaymentResponse[] $paymentResponses
      */
-    public function __construct(array $paymentResponces) {
-        $this->paymentResponces = $paymentResponces;
+    public function __construct(array $paymentResponses) {
+        $this->paymentResponses = $paymentResponses;
     }
 
     /**
      * @return PaymentResponse[]
      */
-    public function getPaymentResponces() {
-        return $this->paymentResponces;
+    public function getPaymentResponses() {
+        return $this->paymentResponses;
     }
 
     /**
-     * @param PaymentResponse[] $paymentResponces
+     * @param PaymentResponse[] $paymentResponses
      */
-    public function setPaymentResponces($paymentResponces) {
-        $this->paymentResponces = $paymentResponces;
+    public function setPaymentResponses($paymentResponses) {
+        $this->paymentResponses = $paymentResponses;
     }
 
 }

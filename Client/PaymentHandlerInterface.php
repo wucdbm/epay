@@ -26,19 +26,19 @@ interface PaymentHandlerInterface {
 
     /**
      * @param PaymentParams $params
-     * @return PaymentResponse|null
+     * @return PaymentResponse|void
      */
     public function handlePaid(PaymentParams $params);
 
     /**
      * @param PaymentParams $params
-     * @return PaymentResponse|null
+     * @return PaymentResponse|void
      */
     public function handleDenied(PaymentParams $params);
 
     /**
      * @param PaymentParams $params
-     * @return PaymentResponse|null
+     * @return PaymentResponse|void
      */
     public function handleExpired(PaymentParams $params);
 

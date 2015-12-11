@@ -2,16 +2,19 @@
 
 namespace Wucdbm\Component\Epay\Client;
 
-use GuzzleHttp\Client;
 use Wucdbm\Component\Epay\Exception\ChecksumMismatchException;
 use Wucdbm\Component\Epay\Exception\EasyPayRequestErrorException;
 use Wucdbm\Component\Epay\Exception\InvoiceNotFoundException;
 use Wucdbm\Component\Epay\Exception\NoDataException;
 use Wucdbm\Component\Epay\Payment\PaymentParams;
+use Wucdbm\Component\Epay\Response\ChecksumMismatchResponse;
+use Wucdbm\Component\Epay\Response\EasyPayResponse;
 use Wucdbm\Component\Epay\Response\ErrorResponse;
 use Wucdbm\Component\Epay\Response\MissingPaymentResponse;
+use Wucdbm\Component\Epay\Response\NoDataResponse;
 use Wucdbm\Component\Epay\Response\PaymentResponse;
 use Wucdbm\Component\Epay\Response\ReceiveResponse;
+use Wucdbm\Component\Epay\Response\ReceiveResponseInterface;
 use Wucdbm\Component\Epay\Response\SuccessResponse;
 
 class EpayClient {
@@ -24,8 +27,6 @@ class EpayClient {
 
     const PAYMENT_CHECKSUM_KEY = 'checksum',
         PAYMENT_ENCODED_KEY = 'encoded';
-
-    const HMAC_ALGO = 'sha1';
 
     protected $options;
 
@@ -73,6 +74,16 @@ class EpayClient {
         return $this->options->getMerchantSecret();
     }
 
+    /**
+     * @param $invoiceId
+     * @param $amount
+     * @param $description
+     * @param \DateTime $expiryDate
+     * @param string $formId
+     * @param $okUrl
+     * @param $cancelUrl
+     * @return string
+     */
     public function getEpayForm($invoiceId, $amount, $description, \DateTime $expiryDate, $formId = '', $okUrl, $cancelUrl) {
         $exp_date = $expiryDate->format('d.m.Y');
         $merchantId = $this->getMerchantId();
@@ -87,7 +98,7 @@ ENCODING=utf-8
 DATA;
 
         $encoded = base64_encode($data);
-        $checksum = $this->hmac('sha1', $encoded, $this->getMerchantSecret());
+        $checksum = $this->hmac($encoded, $this->getMerchantSecret());
 
         $form = '<form action="' . $this->getSubmitUrl() . '" method="POST" name="' . $formId . '" id="' . $formId . '">
                 <input type="hidden" name="PAGE" value="paylogin">
@@ -106,8 +117,7 @@ DATA;
      * @param $amount
      * @param $description
      * @param \DateTime $expiryDate
-     * @return mixed
-     * @throws EasyPayRequestErrorException
+     * @return EasyPayResponse
      */
     public function getEasyPayIdn($invoiceId, $amount, $description, \DateTime $expiryDate) {
         $exp_date = $expiryDate->format('d.m.Y');
@@ -122,44 +132,62 @@ DESCR={$description}
 ENCODING=utf-8
 DATA;
 
-        // TODO: Ditch Guzzle in favor of file_get_contents because guzzle v6 might not be installable everywhere?
         $encoded = base64_encode($data);
-        $checksum = $this->hmac('sha1', $encoded, $this->getMerchantSecret());
+        $checksum = $this->hmac($encoded, $this->getMerchantSecret());
         $url = $this->getEasyPayRequestUrl($encoded, $checksum);
 
-        $client = new Client();
-        $response = $client->request('GET', $url);
-
-        $body = $response->getBody()->getContents();
+        $body = file_get_contents($url);
+        // TODO: Try without iconv
         $body = iconv('cp1251', 'utf-8', $body);
 
-        $matches = [];
-        if (preg_match_all('/IDN=(?<idn>\d+)/', $body, $matches)) {
-            if (isset($matches['idn'][0])) {
+        if (strpos($body, 'IDN=') === 0) {
+            $idn = str_replace('IDN=', '', $body);
 
-                return $matches['idn'][0];
-            }
+            return new EasyPayResponse($body, $idn, '', false);
         }
-        // TODO: Return EasyPayRequest object
 
-        preg_match_all('/ERR=(?<err>.+)/', $body, $matches);
-        $error = isset($matches['err'][0]) ? $matches['err'][0] : '';
+        $error = '';
+        if (strpos($body, 'ERR=') === 0) {
+            $error = str_replace('ERR=', '', $body);
+        }
 
-        throw new EasyPayRequestErrorException($error);
+        return new EasyPayResponse($body, '', $error, false);
     }
 
     public function getEasyPayFakePayUrl($idn) {
         return sprintf('https://demo.epay.bg/ezp/pay_bill.cgi?ACTION=PAY&IDN=%s', $idn);
     }
 
-    public function receive($data) {
-        if (!isset($data[self::PAYMENT_CHECKSUM_KEY]) || !isset($data[self::PAYMENT_ENCODED_KEY])) {
+    /**
+     * @param array $post
+     * @return ReceiveResponseInterface
+     */
+    public function receiveResponse(array $post) {
+        try {
+            return $this->receive($post);
+        } catch (NoDataException $ex) {
+            // TODO: Handle this - should be possible to register a "Receive Subscriber" ?
+            return $this->createNoDataResponse();
+        } catch (ChecksumMismatchException $ex) {
+            // TODO: Handle this - should be possible to register a "Receive Subscriber" ?
+            return $this->createInvalidChecksumResponse();
+        }
+    }
+
+    /**
+     * @param $post
+     * @return ReceiveResponse
+     * @throws ChecksumMismatchException
+     * @throws NoDataException
+     */
+    public function receive(array $post) {
+        if (!isset($post[self::PAYMENT_CHECKSUM_KEY]) || !isset($post[self::PAYMENT_ENCODED_KEY])) {
             throw new NoDataException();
         }
 
-        $checksum = $data[self::PAYMENT_CHECKSUM_KEY];
-        $encoded = $data[self::PAYMENT_ENCODED_KEY];
-        $check = self::hmac(self::HMAC_ALGO, $encoded, $this->getMerchantSecret());
+        $checksum = $post[self::PAYMENT_CHECKSUM_KEY];
+        $encoded = $post[self::PAYMENT_ENCODED_KEY];
+        $check = $this->hmac($encoded, $this->getMerchantSecret());
         $decoded = base64_decode($encoded);
 
         $checksumMatches = $check == $checksum;
@@ -184,6 +212,10 @@ DATA;
         return new ReceiveResponse($responses);
     }
 
+    /**
+     * @param $line
+     * @return PaymentResponse
+     */
     public function handlePayment($line) {
         $params = new PaymentParams($line);
 
@@ -219,7 +251,31 @@ DATA;
         return new SuccessResponse($params->getInvoice());
     }
 
-    private function hmac($algo, $data, $passwd) {
+    /**
+     * @return NoDataResponse
+     */
+    public function createNoDataResponse() {
+        return new NoDataResponse();
+    }
+
+    /**
+     * @return ChecksumMismatchResponse
+     */
+    public function createInvalidChecksumResponse() {
+        return new ChecksumMismatchResponse();
+    }
+
+    public function hmac($data, $passwd) {
+        return $this->_hmac($this->options->getHmacAlgo(), $data, $passwd);
+    }
+
+    /**
+     * @param $algo
+     * @param $data
+     * @param $passwd
+     * @return mixed
+     */
+    private function _hmac($algo, $data, $passwd) {
         /* md5 and sha1 only */
         $algo = strtolower($algo);
         $p = array('md5' => 'H32', 'sha1' => 'H40');

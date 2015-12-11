@@ -12,6 +12,7 @@ class ClientOptions {
     const EASY_PAY_URL = 'easy_pay_url';
     const MERCHANT_ID = 'merchant_id';
     const MERCHANT_SECRET = 'merchant_secret';
+    const HMAC_ALGO = 'hmac_algo';
 
     protected $options;
 
@@ -43,12 +44,17 @@ class ClientOptions {
         return $this->get(self::MERCHANT_SECRET);
     }
 
+    public function getHmacAlgo() {
+        return $this->get(self::HMAC_ALGO);
+    }
+
     public function __construct(array $options) {
         $resolver = new OptionsResolver();
 
         $resolver->setDefaults([
             self::SUBMIT_BUTTON => '<input type="submit" value="To Epay.bg" class="btn btn-success btn-block"/>',
-            self::IS_TEST       => true
+            self::IS_TEST       => true,
+            self::HMAC_ALGO     => 'sha1'
         ]);
 
         $resolver->setRequired([
@@ -63,7 +69,7 @@ class ClientOptions {
 
         $this->options = $resolver->resolve($options);
 
-        if (!$this->getSubmitUrl()) {
+        if (!isset($this->options[self::SUBMIT_URL])) {
             if ($this->getIsTest()) {
                 $this->options[self::SUBMIT_URL] = EpayClient::SUBMIT_URL_EPAY_TEST;
             } else {
@@ -71,7 +77,7 @@ class ClientOptions {
             }
         }
 
-        if (!$this->getEasyPayUrl()) {
+        if (!isset($this->options[self::EASY_PAY_URL])) {
             if ($this->getIsTest()) {
                 $this->options[self::EASY_PAY_URL] = EpayClient::SUBMIT_URL_EASY_PAY_TEST;
             } else {

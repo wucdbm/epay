@@ -2,6 +2,9 @@
 
 namespace Wucdbm\Component\Epay\Response;
 
+/**
+ * Response line for a single payment
+ */
 abstract class PaymentResponse {
 
     const PARAM_INVOICE = 'INVOICE',
