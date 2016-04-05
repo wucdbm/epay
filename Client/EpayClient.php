@@ -3,6 +3,7 @@
 namespace Wucdbm\Component\Epay\Client;
 
 use Wucdbm\Component\Epay\Exception\ChecksumMismatchException;
+use Wucdbm\Component\Epay\Exception\EasyPayGetIdnError;
 use Wucdbm\Component\Epay\Exception\InvoiceNotFoundException;
 use Wucdbm\Component\Epay\Exception\NoDataException;
 use Wucdbm\Component\Epay\Payment\PaymentParams;
@@ -117,6 +118,7 @@ DATA;
      * @param $description
      * @param \DateTime $expiryDate
      * @return EasyPayResponse
+     * @throws EasyPayGetIdnError
      */
     public function getEasyPayIdn($invoiceId, $amount, $description, \DateTime $expiryDate) {
         $exp_date = $expiryDate->format('d.m.Y');
@@ -143,12 +145,7 @@ DATA;
             return new EasyPayResponse($body, $idn, '', false);
         }
 
-        $error = '';
-        if (strpos($body, 'ERR=') === 0) {
-            $error = str_replace('ERR=', '', $body);
-        }
-
-        return new EasyPayResponse($body, '', $error, true);
+        throw new EasyPayGetIdnError($body);
     }
 
     public function getEasyPayFakePayUrl($idn) {
