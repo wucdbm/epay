@@ -136,8 +136,6 @@ DATA;
         $url = $this->getEasyPayRequestUrl($encoded, $checksum);
 
         $body = file_get_contents($url);
-        // TODO: Try without iconv
-        $body = iconv('cp1251', 'utf-8', $body);
 
         if (strpos($body, 'IDN=') === 0) {
             $idn = str_replace('IDN=', '', $body);
@@ -150,7 +148,7 @@ DATA;
             $error = str_replace('ERR=', '', $body);
         }
 
-        return new EasyPayResponse($body, '', $error, false);
+        return new EasyPayResponse($body, '', $error, true);
     }
 
     public function getEasyPayFakePayUrl($idn) {
@@ -165,10 +163,12 @@ DATA;
         try {
             return $this->receive($post);
         } catch (NoDataException $ex) {
-            // TODO: Handle this - should be possible to register a "Receive Subscriber" ?
+            $this->handler->onError($ex);
+
             return $this->createNoDataResponse();
         } catch (ChecksumMismatchException $ex) {
-            // TODO: Handle this - should be possible to register a "Receive Subscriber" ?
+            $this->handler->onError($ex);
+
             return $this->createInvalidChecksumResponse();
         }
     }
@@ -181,7 +181,7 @@ DATA;
      */
     public function receive(array $post) {
         if (!isset($post[self::PAYMENT_CHECKSUM_KEY]) || !isset($post[self::PAYMENT_ENCODED_KEY])) {
-            throw new NoDataException();
+            throw new NoDataException('No data.');
         }
 
         $checksum = $post[self::PAYMENT_CHECKSUM_KEY];
@@ -194,7 +194,7 @@ DATA;
         $this->handler->onReceive($encoded, $decoded, $checksum, $checksumMatches);
 
         if (!$checksumMatches) {
-            throw new ChecksumMismatchException();
+            throw new ChecksumMismatchException('Checksum mismatch.');
         }
 
         return $this->handleLines($decoded);

@@ -2,8 +2,6 @@
 
 namespace Wucdbm\Component\Epay\Client;
 
-use Symfony\Component\OptionsResolver\OptionsResolver;
-
 class ClientOptions {
 
     const IS_TEST = 'is_test';
@@ -14,76 +12,140 @@ class ClientOptions {
     const MERCHANT_SECRET = 'merchant_secret';
     const HMAC_ALGO = 'hmac_algo';
 
-    protected $options;
+    /** @var bool */
+    protected $debug = true;
 
-    public function get($option) {
-        return $this->options[$option];
+    /** @var string */
+    protected $submitButton = '<input type="submit" value="To Epay.bg" class="btn btn-success btn-block"/>';
+
+    /** @var  string */
+    protected $submitUrl;
+
+    /** @var  string */
+    protected $easyPayUrl;
+
+    /** @var  string */
+    protected $merchantId;
+
+    /** @var  string */
+    protected $merchantSecret;
+
+    /** @var string */
+    protected $hmacAlgo = 'sha1';
+
+    public function configureUrls() {
+        if ($this->isDebug()) {
+            $this->submitUrl = EpayClient::SUBMIT_URL_EPAY_TEST;
+            $this->easyPayUrl = EpayClient::SUBMIT_URL_EASY_PAY_TEST;
+        } else {
+            $this->submitUrl = EpayClient::SUBMIT_URL_EPAY_PROD;
+            $this->easyPayUrl = EpayClient::SUBMIT_URL_EASY_PAY_PROD;
+        }
     }
 
-    public function getIsTest() {
-        return $this->get(self::IS_TEST);
+    public function __construct($merchantId, $merchantSecret, $isDebug = true) {
+        $this->merchantId = $merchantId;
+        $this->merchantSecret = $merchantSecret;
+        $this->debug = $isDebug;
+        $this->configureUrls();
     }
 
+    /**
+     * @return boolean
+     */
+    public function isDebug() {
+        return $this->debug;
+    }
+
+    /**
+     * @param boolean $debug
+     */
+    public function setDebug($debug) {
+        $this->debug = $debug;
+    }
+
+    /**
+     * @return string
+     */
     public function getSubmitButton() {
-        return $this->get(self::SUBMIT_BUTTON);
+        return $this->submitButton;
     }
 
+    /**
+     * @param string $submitButton
+     */
+    public function setSubmitButton($submitButton) {
+        $this->submitButton = $submitButton;
+    }
+
+    /**
+     * @return string
+     */
     public function getSubmitUrl() {
-        return $this->get(self::SUBMIT_URL);
+        return $this->submitUrl;
     }
 
+    /**
+     * @param string $submitUrl
+     */
+    public function setSubmitUrl($submitUrl) {
+        $this->submitUrl = $submitUrl;
+    }
+
+    /**
+     * @return string
+     */
     public function getEasyPayUrl() {
-        return $this->get(self::EASY_PAY_URL);
+        return $this->easyPayUrl;
     }
 
+    /**
+     * @param string $easyPayUrl
+     */
+    public function setEasyPayUrl($easyPayUrl) {
+        $this->easyPayUrl = $easyPayUrl;
+    }
+
+    /**
+     * @return string
+     */
     public function getMerchantId() {
-        return $this->get(self::MERCHANT_ID);
+        return $this->merchantId;
     }
 
+    /**
+     * @param string $merchantId
+     */
+    public function setMerchantId($merchantId) {
+        $this->merchantId = $merchantId;
+    }
+
+    /**
+     * @return string
+     */
     public function getMerchantSecret() {
-        return $this->get(self::MERCHANT_SECRET);
+        return $this->merchantSecret;
     }
 
+    /**
+     * @param string $merchantSecret
+     */
+    public function setMerchantSecret($merchantSecret) {
+        $this->merchantSecret = $merchantSecret;
+    }
+
+    /**
+     * @return string
+     */
     public function getHmacAlgo() {
-        return $this->get(self::HMAC_ALGO);
+        return $this->hmacAlgo;
     }
 
-    public function __construct(array $options) {
-        $resolver = new OptionsResolver();
-
-        $resolver->setDefaults([
-            self::SUBMIT_BUTTON => '<input type="submit" value="To Epay.bg" class="btn btn-success btn-block"/>',
-            self::IS_TEST       => true,
-            self::HMAC_ALGO     => 'sha1'
-        ]);
-
-        $resolver->setRequired([
-            self::MERCHANT_ID,
-            self::MERCHANT_SECRET
-        ]);
-
-        $resolver->setDefined([
-            self::SUBMIT_URL,
-            self::EASY_PAY_URL
-        ]);
-
-        $this->options = $resolver->resolve($options);
-
-        if (!isset($this->options[self::SUBMIT_URL])) {
-            if ($this->getIsTest()) {
-                $this->options[self::SUBMIT_URL] = EpayClient::SUBMIT_URL_EPAY_TEST;
-            } else {
-                $this->options[self::SUBMIT_URL] = EpayClient::SUBMIT_URL_EPAY_PROD;
-            }
-        }
-
-        if (!isset($this->options[self::EASY_PAY_URL])) {
-            if ($this->getIsTest()) {
-                $this->options[self::EASY_PAY_URL] = EpayClient::SUBMIT_URL_EASY_PAY_TEST;
-            } else {
-                $this->options[self::EASY_PAY_URL] = EpayClient::SUBMIT_URL_EASY_PAY_PROD;
-            }
-        }
+    /**
+     * @param string $hmacAlgo
+     */
+    public function setHmacAlgo($hmacAlgo) {
+        $this->hmacAlgo = $hmacAlgo;
     }
 
 }

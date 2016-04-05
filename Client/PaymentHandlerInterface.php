@@ -2,11 +2,18 @@
 
 namespace Wucdbm\Component\Epay\Client;
 
+use Wucdbm\Component\Epay\Exception\EpayException;
 use Wucdbm\Component\Epay\Exception\InvoiceNotFoundException;
 use Wucdbm\Component\Epay\Payment\PaymentParams;
 use Wucdbm\Component\Epay\Response\PaymentResponse;
 
 interface PaymentHandlerInterface {
+
+    /**
+     * @param EpayException $ex
+     * @return void
+     */
+    public function onError(EpayException $ex);
 
     /**
      * @param $encoded string
@@ -41,6 +48,5 @@ interface PaymentHandlerInterface {
      * @return PaymentResponse|void
      */
     public function handleExpired(PaymentParams $params);
-
 
 }
