@@ -51,6 +51,7 @@ Receiving payments
 
 ```
 $response = $client->receiveResponse($post);
+// the client will call your handler, which must deal with the payments received
 // $response is an \Wucdbm\Component\Epay\Response\ReceiveResponseInterface instance
 // exceptions are caught internally and transformed into responses, the no data exception and checksum mismatch exceptions in particular generate a global error response for epay
 echo $response->toString();
