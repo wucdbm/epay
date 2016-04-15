@@ -28,6 +28,9 @@ class EpayClient {
     const PAYMENT_CHECKSUM_KEY = 'checksum',
         PAYMENT_ENCODED_KEY = 'encoded';
 
+    /**
+     * @var ClientOptions
+     */
     protected $options;
 
     /**
